@@ -19,7 +19,16 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+
+// Initialize Analytics only if supported
+let analytics: ReturnType<typeof getAnalytics> | null = null;
+if (typeof window !== 'undefined') {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn('Firebase Analytics is not supported in this environment:', error);
+  }
+}
 
 // Initialize Firebase services
 export const auth = getAuth(app);
@@ -27,3 +36,4 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 
 export default app;
+export { analytics };

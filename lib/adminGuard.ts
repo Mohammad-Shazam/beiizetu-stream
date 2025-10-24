@@ -1,8 +1,9 @@
 import { headers } from 'next/headers';
-import admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin if credentials are provided
-let firebaseAdmin: typeof admin | null = null;
+let firebaseAdmin: ReturnType<typeof getAuth> | null = null;
 
 if (
   process.env.FB_PROJECT_ID &&
@@ -16,9 +17,11 @@ if (
       privateKey: process.env.FB_PRIVATE_KEY.replace(/\\n/g, '\n'),
     };
     
-    firebaseAdmin = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+    const app = initializeApp({
+      credential: cert(serviceAccount),
     });
+    
+    firebaseAdmin = getAuth(app);
     
     console.log('Firebase Admin initialized');
   } catch (error) {
@@ -41,7 +44,7 @@ export async function requireAdmin(reqHeaders: Headers): Promise<{ uid: string }
       }
       
       const token = authHeader.substring(7);
-      const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
+      const decodedToken = await firebaseAdmin.verifyIdToken(token);
       
       // Check if user has admin role
       if (decodedToken.roles && decodedToken.roles.includes('admin')) {

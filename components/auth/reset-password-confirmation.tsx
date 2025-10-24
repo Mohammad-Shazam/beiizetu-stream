@@ -26,7 +26,7 @@ export function ResetPasswordConfirmation({ ...props }: React.ComponentProps<typ
           <a href="/login">Return to Login</a>
         </Button>
         <p className="mt-4 text-sm text-muted-foreground">
-          Didn't receive the email? Check your spam folder or{" "}
+          Didn't receive the email? Check your spam folder or {" "}
           <a href="/reset-password" className="underline">
             try again
           </a>

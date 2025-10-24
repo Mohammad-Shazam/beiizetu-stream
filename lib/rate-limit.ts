@@ -12,8 +12,8 @@ interface RateLimitOptions {
 const requests = new Map<string, { count: number; resetTime: number }>();
 
 export function rateLimit(options: RateLimitOptions) {
-  return async (request: NextRequest) => {
-    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  return async (request: any) => {
+    const ip = (request.ip || request.headers?.get('x-forwarded-for')) || 'unknown';
     const now = Date.now();
     const windowStart = now - options.windowMs;
 
