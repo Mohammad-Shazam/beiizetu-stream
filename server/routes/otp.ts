@@ -23,20 +23,18 @@ router.post('/generate', async (req, res) => {
     const otp = generateOTP();
     storeOTP(email, otp);
     
-    res.status(200).json({ 
+    return res.status(200).json({ 
       success: true, 
       message: 'OTP generated successfully',
       // In production, don't return the OTP in the response
-      // This is just for demonstration
       otp: process.env.NODE_ENV === 'development' ? otp : undefined 
     });
   } catch (error) {
     console.error('Error generating OTP:', error);
-    res.status(500).json({ error: 'Failed to generate OTP' });
+    return res.status(500).json({ error: 'Failed to generate OTP' });
   }
 });
 
-// Verify OTP
 router.post('/verify', async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -47,19 +45,19 @@ router.post('/verify', async (req, res) => {
     const result = verifyOTP(email, otp);
     
     if (result.success) {
-      res.status(200).json({ 
+      return res.status(200).json({ 
         success: true, 
         message: 'OTP verified successfully' 
       });
     } else {
-      res.status(400).json({ 
+      return res.status(400).json({ 
         success: false, 
         error: result.error || 'Invalid or expired OTP' 
       });
     }
   } catch (error) {
     console.error('Error verifying OTP:', error);
-    res.status(500).json({ error: 'Failed to verify OTP' });
+    return res.status(500).json({ error: 'Failed to verify OTP' });
   }
 });
 
