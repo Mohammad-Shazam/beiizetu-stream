@@ -1,8 +1,7 @@
-// components/videos/new-folder-dialog.tsx
 "use client"
 
 import * as React from "react"
-import { createFolder, listFolders } from "@/lib/api"
+import { createFolder } from "@/lib/api"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,12 +19,22 @@ export function NewFolderDialog({
   async function handleCreate() {
     if (!name.trim()) return
     setLoading(true)
-    await createFolder(name, "root")
-    setLoading(false)
-    setName("")
-    onCreated?.()
-    onOpenChange(false)
-    toast({ title: "Folder created", description: `"${name}" has been added.` })
+    
+    try {
+      await createFolder(name, "root")
+      setName("")
+      onCreated?.()
+      onOpenChange(false)
+      toast({ title: "Folder created", description: `"${name}" has been added.` })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create folder",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -36,10 +45,18 @@ export function NewFolderDialog({
         </DialogHeader>
         <div className="space-y-2">
           <Label htmlFor="fname">Folder name</Label>
-          <Input id="fname" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Client Videos" />
+          <Input 
+            id="fname" 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+            placeholder="e.g. Client Videos" 
+            disabled={loading}
+          />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            Cancel
+          </Button>
           <Button onClick={handleCreate} disabled={loading || !name.trim()}>
             {loading ? "Creating..." : "Create"}
           </Button>

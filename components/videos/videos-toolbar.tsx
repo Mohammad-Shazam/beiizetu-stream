@@ -1,11 +1,9 @@
-// components/videos/videos-toolbar.tsx
 "use client"
 
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UploadDialog } from "./upload-dialog"
 import { NewFolderDialog } from "./new-folder-dialog"
 import { Plus } from "lucide-react"
 
@@ -17,7 +15,6 @@ export function VideosToolbar({
   const [q, setQ] = useState("")
   const [status, setStatus] = useState("all")
   const [visibility, setVisibility] = useState("all")
-  const [openUpload, setOpenUpload] = useState(false)
   const [openFolder, setOpenFolder] = useState(false)
 
   useEffect(() => {
@@ -49,12 +46,16 @@ export function VideosToolbar({
         </Select>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="outline" onClick={() => setOpenFolder(true)}><Plus className="mr-2 h-4 w-4" />Folder</Button>
-        <Button onClick={() => setOpenUpload(true)}>Upload</Button>
+        <Button variant="outline" onClick={() => setOpenFolder(true)}>
+          <Plus className="mr-2 h-4 w-4" />Folder
+        </Button>
       </div>
 
-      <UploadDialog open={openUpload} onOpenChange={setOpenUpload} />
-      <NewFolderDialog open={openFolder} onOpenChange={setOpenFolder} />
+      <NewFolderDialog 
+        open={openFolder} 
+        onOpenChange={setOpenFolder} 
+        onCreated={() => window.location.reload()} 
+      />
     </div>
   )
 }

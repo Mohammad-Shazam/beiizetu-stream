@@ -1,46 +1,67 @@
 // components/dashboard/recent-uploads.tsx
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PlayCircle, Link2, RefreshCw } from "lucide-react"
+import { listVideos } from "@/lib/api"
+import { Video, VideoStatus } from "@/lib/types"
 
-type Row = {
-  id: string
-  title: string
-  status: "uploaded" | "processing" | "ready" | "error"
-  size: string
-  createdAt: string
-}
-
-const ROWS: Row[] = [
-  { id: "vid_9a1", title: "Site Tour 1080p", status: "processing", size: "1.2 GB", createdAt: "Oct 24, 2025" },
-  { id: "vid_7f3", title: "Onboarding Clip", status: "ready", size: "380 MB", createdAt: "Oct 24, 2025" },
-  { id: "vid_5c8", title: "Promo – Q4", status: "uploaded", size: "2.4 GB", createdAt: "Oct 23, 2025" },
-  { id: "vid_2b2", title: "Tutorial Part 1", status: "ready", size: "940 MB", createdAt: "Oct 22, 2025" },
-  { id: "vid_1aa", title: "Raw Interview", status: "error", size: "3.1 GB", createdAt: "Oct 21, 2025" },
-]
-
-function StatusBadge({ s }: { s: Row["status"] }) {
+function StatusBadge({ s }: { s: VideoStatus }) {
   const map = {
     uploaded: { label: "Uploaded", variant: "secondary" as const },
     processing: { label: "Processing", variant: "outline" as const },
     ready: { label: "Ready", variant: "default" as const },
     error: { label: "Error", variant: "destructive" as const },
-  }
-  const { label, variant } = map[s]
+  } as const
+  const { label, variant } = map[s] || map.uploaded
   return <Badge variant={variant}>{label}</Badge>
 }
 
 export function RecentUploads() {
+  const [videos, setVideos] = useState<Video[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadVideos() {
+      try {
+        const videoList = await listVideos({})
+        // Sort by creation date, newest first
+        const sortedVideos = videoList.sort((a, b) =>
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        )
+        setVideos(sortedVideos.slice(0, 5)) // Show only 5 most recent
+      } catch (error) {
+        console.error('Failed to load recent videos:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadVideos()
+  }, [])
+
+  function formatSize(bytes?: number): string {
+    if (!bytes) return "—"
+    const mb = bytes / 1024 / 1024
+    if (mb < 1024) return `${Math.round(mb)} MB`
+    return `${Math.round(mb / 1024 * 100) / 100} GB`
+  }
+
+  function formatDate(dateString?: string | number): string {
+    if (!dateString) return "—"
+    return new Date(dateString).toLocaleDateString()
+  }
+
   return (
     <Card className="border-purple-500/10">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Recent Uploads</CardTitle>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
@@ -58,24 +79,47 @@ export function RecentUploads() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {ROWS.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell className="pl-6 font-medium">{r.title}</TableCell>
-                <TableCell><StatusBadge s={r.status} /></TableCell>
-                <TableCell>{r.size}</TableCell>
-                <TableCell>{r.createdAt}</TableCell>
-                <TableCell className="text-right pr-6">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`/dashboard/videos/${r.id}`}><Link2 className="mr-2 h-4 w-4" />Open</a>
-                    </Button>
-                    <Button size="sm" asChild disabled={r.status !== "ready"}>
-                      <a href={`/videos/${r.id}`}><PlayCircle className="mr-2 h-4 w-4" />Watch</a>
-                    </Button>
-                  </div>
+            {loading ? (
+              [...Array(5)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell className="pl-6"><div className="h-4 w-32 bg-muted rounded animate-pulse"></div></TableCell>
+                  <TableCell><div className="h-4 w-16 bg-muted rounded animate-pulse"></div></TableCell>
+                  <TableCell><div className="h-4 w-12 bg-muted rounded animate-pulse"></div></TableCell>
+                  <TableCell><div className="h-4 w-20 bg-muted rounded animate-pulse"></div></TableCell>
+                  <TableCell className="text-right pr-6">
+                    <div className="flex justify-end gap-2">
+                      <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
+                      <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : videos.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No videos uploaded yet
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              videos.map((video) => (
+                <TableRow key={video.id}>
+                  <TableCell className="pl-6 font-medium">{video.title}</TableCell>
+                  <TableCell><StatusBadge s={video.status || "uploaded"} /></TableCell>
+                  <TableCell>{formatSize(video.sizeBytes)}</TableCell>
+                  <TableCell>{formatDate(video.createdAt)}</TableCell>
+                  <TableCell className="text-right pr-6">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={`/dashboard/videos/${video.id}`}><Link2 className="mr-2 h-4 w-4" />Open</a>
+                      </Button>
+                      <Button size="sm" asChild disabled={(video.status || "uploaded") !== "ready"}>
+                        <a href={`/videos/${video.id}`}><PlayCircle className="mr-2 h-4 w-4" />Watch</a>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "root",
+    "name": "Root",
+    "parentId": null
+  },
+  {
+    "id": "583dae00-68f9-443f-963f-ecefbb065181",
+    "name": "fxdigi",
+    "parentId": "root"
+  }
+]

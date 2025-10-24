@@ -11,6 +11,7 @@ async function ensureDirectories() {
     await mkdir(join(MEDIA_ROOT, 'uploads'), { recursive: true });
     await mkdir(join(MEDIA_ROOT, 'hls'), { recursive: true });
     await mkdir(join(MEDIA_ROOT, 'meta'), { recursive: true });
+    await mkdir(join(MEDIA_ROOT, 'status'), { recursive: true });
   } catch (error) {
     console.error('Error creating directories:', error);
   }
@@ -26,8 +27,12 @@ async function updateMetadata(videoId: string, status: string) {
     
     await writeFile(metaPath, JSON.stringify(metadata, null, 2));
     
+    // Update status file
+    const statusPath = join(MEDIA_ROOT, 'status', `${videoId}.json`);
+    await writeFile(statusPath, JSON.stringify({ status, videoId }));
+    
     // Optional: Update Firestore if configured
-    if (process.env.FB_PROJECT_ID && process.env.FB_CLIENT_EMAIL && process.env.FB_PRIVATE_KEY) {
+    if (process.env.FB_PROJECT_ID) {
       try {
         const { getFirestore } = await import('firebase-admin/firestore');
         const db = getFirestore();
@@ -99,41 +104,35 @@ async function transcodeToHLS(videoId: string) {
 
 // Watch for new uploads
 async function watchForUploads() {
-  const uploadsDir = join(MEDIA_ROOT, 'uploads');
+  const statusDir = join(MEDIA_ROOT, 'status');
   
   try {
-    console.log(`Watching ${uploadsDir} for new uploads...`);
+    console.log(`Watching ${statusDir} for new uploads...`);
     
     // Process existing files
-    const files = await watch(uploadsDir);
+    const files = await watch(statusDir);
     
     for await (const event of files) {
       if (event.eventType === 'rename' && event.filename) {
-        const filePath = join(uploadsDir, event.filename);
+        const statusPath = join(statusDir, event.filename);
         
-        // Check if it's a new MP4 file
-        if (event.filename.endsWith('.mp4') && existsSync(filePath)) {
-          const videoId = event.filename.replace('.mp4', '');
-          
-          // Check if already processed
-          const metaPath = join(MEDIA_ROOT, 'meta', `${videoId}.json`);
-          if (existsSync(metaPath)) {
-            try {
-              const metadata = JSON.parse(await readFile(metaPath, 'utf8'));
-              
-              // Only process if status is 'uploaded'
-              if (metadata.status === 'uploaded') {
-                transcodeToHLS(videoId);
-              }
-            } catch (error) {
-              console.error(`Error reading metadata for ${videoId}:`, error);
+        // Check if it's a new status file
+        if (event.filename.endsWith('.json') && existsSync(statusPath)) {
+          try {
+            const statusData = JSON.parse(await readFile(statusPath, 'utf8'));
+            
+            // Only process if status is 'uploaded'
+            if (statusData.status === 'uploaded') {
+              transcodeToHLS(statusData.videoId);
             }
+          } catch (error) {
+            console.error(`Error reading status file ${event.filename}:`, error);
           }
         }
       }
     }
   } catch (error) {
-    console.error('Error watching uploads:', error);
+    console.error('Error watching status files:', error);
   }
 }
 
