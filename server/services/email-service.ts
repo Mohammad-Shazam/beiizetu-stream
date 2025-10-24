@@ -1,5 +1,5 @@
-import transporter from '../config/mailer';
-import { generateOTP, storeOTP } from './otp-service';
+import transporter from '../config/mailer.js';
+import { generateOTP, storeOTP } from './otp-service.js';
 
 export async function sendOTPEmail(email: string): Promise<boolean> {
   try {

@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 // In-memory OTP storage (in production, use Redis or a database)
-const otpStore: Map<string, { otp: string; expiresAt: Date; attempts: number }> = new Map();
+const otpStore: Map<string, { otp: string; expiresAt: Date }> = new Map();
 
 // Generate a 6-digit OTP
 export function generateOTP(): string {
@@ -13,10 +13,7 @@ export function storeOTP(email: string, otp: string): void {
   const expiresAt = new Date();
   expiresAt.setMinutes(expiresAt.getMinutes() + 5);
   
-  // Remove any existing OTP for this email
-  otpStore.delete(email);
-  
-  otpStore.set(email, { otp, expiresAt, attempts: 0 });
+  otpStore.set(email, { otp, expiresAt });
   console.log(`OTP stored for ${email}: ${otp}, expires at ${expiresAt}`);
 }
 
@@ -28,22 +25,13 @@ export function verifyOTP(email: string, otp: string): { success: boolean; error
     return { success: false, error: 'OTP not found or expired' };
   }
   
-  const { otp: storedOTP, expiresAt, attempts } = storedData;
+  const { otp: storedOTP, expiresAt } = storedData;
   
   // Check if OTP has expired
   if (new Date() > expiresAt) {
     otpStore.delete(email);
     return { success: false, error: 'OTP has expired' };
   }
-  
-  // Check if too many attempts
-  if (attempts >= 3) {
-    otpStore.delete(email);
-    return { success: false, error: 'Too many attempts. Please request a new OTP.' };
-  }
-  
-  // Increment attempts
-  storedData.attempts++;
   
   // Check if OTP matches
   if (storedOTP === otp) {

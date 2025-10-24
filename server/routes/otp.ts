@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generateOTP, storeOTP, verifyOTP, cleanupExpiredOTPs, getOTPRemainingTime } from '../services/otp-service';
+import { generateOTP, storeOTP, verifyOTP, cleanupExpiredOTPs, getOTPRemainingTime } from '../services/otp-service.js';
 
 const router = Router();
 
@@ -35,6 +35,7 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+// Verify OTP
 router.post('/verify', async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -65,13 +66,13 @@ router.post('/verify', async (req, res) => {
 router.post('/cleanup', async (req, res) => {
   try {
     cleanupExpiredOTPs();
-    res.status(200).json({ 
+    return res.status(200).json({ 
       success: true, 
       message: 'Expired OTPs cleaned up' 
     });
   } catch (error) {
     console.error('Error cleaning up OTPs:', error);
-    res.status(500).json({ error: 'Failed to cleanup OTPs' });
+    return res.status(500).json({ error: 'Failed to cleanup OTPs' });
   }
 });
 

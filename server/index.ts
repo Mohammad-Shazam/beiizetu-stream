@@ -1,8 +1,9 @@
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import express from 'express';
 import cors from 'cors';
-import { createServer } from 'http';
-import { setupRoutes } from './routes';
+import { setupRoutes } from './routes/index.js';
+import './config/mailer.js';
 
 // Load environment variables
 dotenv.config();

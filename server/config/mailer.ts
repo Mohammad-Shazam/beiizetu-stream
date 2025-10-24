@@ -6,8 +6,8 @@ const transporter = nodemailer.createTransport({
   port: parseInt(process.env.SMTP_PORT || '587'),
   secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
   auth: {
-    user: process.env.SMTP_USER || 'elisantobusiness@gmail.com',
-    pass: process.env.SMTP_PASS || 'wpmc knqh sigy gjsm',
+    user: process.env.SMTP_USER || 'your-email@gmail.com',
+    pass: process.env.SMTP_PASS || 'your-app-password',
   },
   tls: {
     rejectUnauthorized: false, // Allow self-signed certificates
