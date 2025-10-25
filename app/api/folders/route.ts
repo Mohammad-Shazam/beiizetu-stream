@@ -1,3 +1,4 @@
+//app/api/folders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';

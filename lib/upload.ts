@@ -1,3 +1,4 @@
+//app/lib/upload.ts
 export interface UploadOptions {
   file: File;
   title?: string;

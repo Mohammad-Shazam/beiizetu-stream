@@ -12,6 +12,7 @@ export interface Video {
   title: string;
   description?: string;
   url?: string;
+  fileName?: string;
   thumbnailUrl?: string;
   posterUrl?: string;
   duration?: number;
@@ -21,7 +22,8 @@ export interface Video {
   folderId: string;
   uploadedBy?: string;
   uploadedAt?: string;
-  createdAt?: number;
+  createdAt?: number | string;
+  updatedAt?: string;
   status?: VideoStatus;
   visibility?: Visibility;
   tags?: string[];

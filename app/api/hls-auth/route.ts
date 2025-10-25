@@ -1,3 +1,4 @@
+//app/api/hls-auth/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { verify } from '@/lib/sec';
 

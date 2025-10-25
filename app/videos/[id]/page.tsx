@@ -1,68 +1,73 @@
-"use client"
+// app/videos/[id]/page.tsx
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { getVideo, generateSignedUrl } from "@/lib/api"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Globe, EyeOff, Users, Eye } from "lucide-react"
-import { toast } from "@/components/ui/use-toast"
-import { Video } from "@/lib/types"
-import { useAuth } from "@/contexts/auth-context"
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { getVideo, generateSignedUrl } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Globe, EyeOff, Users, Eye } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
+import { Video } from "@/lib/types";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function VideoPlayerPage() {
-  const { user } = useAuth()
-  const { id } = useParams<{ id: string }>()
-  const router = useRouter()
-  const [video, setVideo] = useState<Video | null>(null)
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuth();
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const [video, setVideo] = useState<Video | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      loadVideo()
+      loadVideo();
     }
-  }, [id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   async function loadVideo() {
     try {
-      const v = await getVideo(id as string)
+      const v = await getVideo(id as string);
       if (v) {
-        setVideo(v)
-        
-        // Generate signed URL for video playback
-        if (v.status === "ready") {
-          const url = await generateSignedUrl(v.id)
-          setVideoUrl(url)
+        setVideo(v);
+
+        if ((v.status || "uploaded") === "ready") {
+          const url = await generateSignedUrl(v.id); // this must return the API's `url` string
+          setVideoUrl(url);
         }
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to load video",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const getVisibilityIcon = (v: string) => {
     switch (v) {
-      case "public": return <Globe className="h-4 w-4" />
-      case "private": return <EyeOff className="h-4 w-4" />
-      case "role": return <Users className="h-4 w-4" />
-      default: return <Eye className="h-4 w-4" />
+      case "public":
+        return <Globe className="h-4 w-4" />;
+      case "private":
+        return <EyeOff className="h-4 w-4" />;
+      case "role":
+        return <Users className="h-4 w-4" />;
+      default:
+        return <Eye className="h-4 w-4" />;
     }
-  }
+  };
 
   if (loading) {
-    return <div className="p-6">Loading...</div>
+    return <div className="p-6">Loading...</div>;
   }
 
   if (!video) {
-    return <div className="p-6">Video not found</div>
+    return <div className="p-6">Video not found</div>;
   }
 
   return (
@@ -82,8 +87,9 @@ export default function VideoPlayerPage() {
               {video.status === "ready" && videoUrl ? (
                 <video
                   controls
+                  preload="metadata"
                   className="w-full aspect-video"
-                  src={videoUrl}
+                  src={videoUrl} // 👈 use the API-returned URL verbatim (e.g. /media/<fileName>.mp4)
                 >
                   Your browser does not support the video tag.
                 </video>
@@ -117,11 +123,13 @@ export default function VideoPlayerPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Status</span>
-                  <Badge variant={(video.status || "uploaded") === "ready" ? "default" : "outline"}>
+                  <Badge
+                    variant={(video.status || "uploaded") === "ready" ? "default" : "outline"}
+                  >
                     {video.status || "uploaded"}
                   </Badge>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Visibility</span>
                   <Badge variant="secondary" className="flex items-center gap-1">
@@ -129,15 +137,17 @@ export default function VideoPlayerPage() {
                     {video.visibility || "private"}
                   </Badge>
                 </div>
-                
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">File size</span>
-                    <span>{video.sizeBytes ? Math.round(video.sizeBytes / 1024 / 1024) : 0} MB</span>
+                    <span>
+                      {video.sizeBytes ? Math.round(video.sizeBytes / 1024 / 1024) : 0} MB
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Type</span>
-                    <span>{video.url?.split('.').pop()?.toUpperCase() || "Unknown"}</span>
+                    <span>{video.fileName?.split(".").pop()?.toUpperCase() || "Unknown"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Uploaded</span>
@@ -145,7 +155,7 @@ export default function VideoPlayerPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Uploaded by</span>
-                    <span>{video.uploadedBy || (user?.displayName || "Unknown")}</span>
+                    <span>{video.uploadedBy || user?.displayName || "Unknown"}</span>
                   </div>
                 </div>
               </div>
@@ -154,5 +164,5 @@ export default function VideoPlayerPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
